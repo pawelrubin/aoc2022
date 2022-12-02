@@ -1,21 +1,9 @@
-use std::{
-    env,
-    fs::File,
-    io::{BufRead, BufReader},
-};
-
-fn get_lines(path: String) -> Vec<String> {
-    BufReader::new(File::open(path).unwrap())
-        .lines()
-        .map(Result::unwrap)
-        .collect::<Vec<_>>()
-}
+mod common;
 
 fn main() {
-    let input_file_path = env::args().nth(1).expect("no input file path given");
-
     // count calories for every elf
-    let mut elves: Vec<_> = get_lines(input_file_path)
+    let mut elves: Vec<_> = common::get_lines()
+        .collect::<Vec<String>>()
         .split(String::is_empty)
         .map(|group| group.iter().map(|e| e.parse::<i32>().unwrap()).sum::<i32>())
         .collect();
