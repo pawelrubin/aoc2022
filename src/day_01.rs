@@ -1,8 +1,8 @@
-mod common;
+mod shared;
 
 fn main() {
     // count calories for every elf
-    let mut elves: Vec<_> = common::get_lines()
+    let mut elves: Vec<_> = shared::get_lines()
         .collect::<Vec<String>>()
         .split(String::is_empty)
         .map(|group| group.iter().map(|e| e.parse::<i32>().unwrap()).sum::<i32>())
