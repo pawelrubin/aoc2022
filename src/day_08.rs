@@ -2,9 +2,9 @@ use take_until::TakeUntilExt;
 
 mod shared;
 
-type Grid = Vec<Vec<u32>>;
+type Grid<T> = Vec<Vec<T>>;
 
-fn read_grid(lines: impl Iterator<Item = String>) -> Grid {
+fn read_grid(lines: impl Iterator<Item = String>) -> Grid<u32> {
     lines
         .map(|line| line.chars().map(|c| c.to_digit(10).unwrap()).collect())
         .fold(Vec::new(), |mut acc, row: Vec<u32>| {
@@ -13,7 +13,7 @@ fn read_grid(lines: impl Iterator<Item = String>) -> Grid {
         })
 }
 
-fn count_visible_trees(grid: &Grid) -> u32 {
+fn count_visible_trees(grid: &Grid<u32>) -> u32 {
     let mut count = 0;
     for (i, row) in (&grid).into_iter().enumerate() {
         for (j, tree) in row.into_iter().enumerate() {
@@ -35,7 +35,7 @@ fn count_visible_trees(grid: &Grid) -> u32 {
     count
 }
 
-fn find_best_scenic_score(grid: &Grid) -> usize {
+fn find_best_scenic_score(grid: &Grid<u32>) -> usize {
     let mut scenic_scores = vec![];
     for (i, row) in (&grid).into_iter().enumerate() {
         for (j, tree) in row.into_iter().enumerate() {
@@ -57,6 +57,23 @@ fn find_best_scenic_score(grid: &Grid) -> usize {
     scenic_scores.into_iter().max().unwrap()
 }
 
+// fn get_tree_lines(grid: &Grid<u32>) ->  Iterator<Item = [Vec<&u32>; 4]> {
+//     let mut result = vec![];
+//     for (i, row) in (&grid).into_iter().enumerate() {
+//         let mut result_row = vec![];
+//         for (j, tree) in row.into_iter().enumerate() {
+//             let tree_lines: [Vec<&u32>; 4] = [
+//                 (&row[..j]).iter().collect(),
+//                 (&row[j + 1..]).iter().collect(),
+//                 (&grid[..i]).into_iter().map(|row| &row[j]).collect(),
+//                 (&grid[i + 1..]).into_iter().map(|row| &row[j]).collect(),
+//             ];
+//             result_row.push(tree_lines);
+//         }
+//         result.push(result_row)
+//     }
+//     result
+// }
 fn main() {
     let grid = read_grid(shared::get_lines());
     println!("{:?}", count_visible_trees(&grid));
