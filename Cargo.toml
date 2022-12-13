@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 auto_ops = "0.3.0"
+regex = "1.7.0"
 
 [[bin]]
 name = "day1"
@@ -43,3 +44,7 @@ path = "src/day_09.rs"
 [[bin]]
 name = "day10"
 path = "src/day_10.rs"
+
+[[bin]]
+name = "day11"
+path = "src/day_11.rs"
