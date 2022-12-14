@@ -1,90 +1,75 @@
+#![feature(array_chunks)]
 mod shared;
+
+use std::cmp::Ordering;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(untagged)]
 enum Data {
     Single(i32),
-    List(Vec<Data>),
+    List(Packet),
 }
 
-type Packet = Vec<Data>;
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Ord)]
+struct Packet(Vec<Data>);
 
-enum OrderResult {
-    Right,
-    Wrong,
-    LeftExhausted,
-    Equal,
-    RightExhausted,
-}
-
-impl OrderResult {
-    fn from(c: bool) -> OrderResult {
-        if c {
-            OrderResult::Right
-        } else {
-            OrderResult::Wrong
-        }
-    }
-}
-
-fn are_ordered(a: &Packet, b: &Packet) -> bool {
-    fn check_order(a: &Packet, b: &Packet) -> OrderResult {
-        for (left, right) in a.iter().zip(b) {
+impl PartialOrd for Packet {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        for (left, right) in (&self.0).into_iter().zip(&other.0) {
             match (left, right) {
-                (Data::Single(x), Data::Single(y)) => {
-                    if x == y {
-                        continue;
-                    }
-
-                    return OrderResult::from(x < y);
-                }
-                (Data::List(xs), Data::List(ys)) => match check_order(xs, ys) {
-                    OrderResult::Right | OrderResult::LeftExhausted => return OrderResult::Right,
-                    OrderResult::Wrong | OrderResult::RightExhausted => return OrderResult::Wrong,
-                    OrderResult::Equal => continue,
+                (Data::Single(x), Data::Single(y)) => match x.partial_cmp(&y) {
+                    Some(Ordering::Equal) => continue,
+                    result => return result,
+                },
+                (Data::List(xs), Data::List(ys)) => match xs.partial_cmp(&ys) {
+                    Some(Ordering::Equal) => continue,
+                    result => return result,
                 },
                 (Data::Single(x), Data::List(ys)) => {
-                    return check_order(&vec![Data::Single(*x)], ys)
+                    return Packet(vec![Data::Single(*x)]).partial_cmp(&ys)
                 }
                 (Data::List(xs), Data::Single(y)) => {
-                    return check_order(xs, &vec![Data::Single(*y)])
+                    return xs.partial_cmp(&Packet(vec![Data::Single(*y)]))
                 }
             }
         }
 
-        if a.len() < b.len() {
-            return OrderResult::LeftExhausted;
-        }
-
-        if a.len() == b.len() {
-            return OrderResult::Equal;
-        }
-
-        return OrderResult::RightExhausted;
+        self.0.len().partial_cmp(&other.0.len())
     }
-
-    matches!(
-        check_order(a, b),
-        OrderResult::Right | OrderResult::Equal | OrderResult::LeftExhausted
-    )
 }
 
 fn main() {
-    let part1: i32 = shared::get_contents()
-        .split("\n\n")
-        .map(|lines| lines.split_once("\n").unwrap())
-        .map(|(a, b)| {
-            (
-                serde_json::from_str::<Packet>(a).unwrap(),
-                serde_json::from_str::<Packet>(b).unwrap(),
-            )
-        })
+    let packets: Vec<Packet> = shared::get_lines()
+        .filter(|line| !line.is_empty())
+        .map(|line| serde_json::from_str::<Packet>(&line).unwrap())
+        .collect();
+
+    let part1: i32 = packets
+        .array_chunks::<2>()
         .enumerate()
-        .filter(|(_, (a, b))| are_ordered(a, b))
+        .filter(|(_, [a, b])| a <= b)
         .map(|(i, _)| i as i32 + 1)
         .sum();
 
     println!("{}", part1);
+
+    let dividers: Vec<Packet> = vec![
+        serde_json::from_str("[[2]]").unwrap(),
+        serde_json::from_str("[[6]]").unwrap(),
+    ];
+
+    let mut packets = [dividers.clone(), packets].concat();
+
+    packets.sort();
+
+    let part2 = packets
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| dividers.contains(e))
+        .map(|(i, _)| i + 1)
+        .fold(1, |a, b| a * b);
+
+    println!("{}", part2);
 }
